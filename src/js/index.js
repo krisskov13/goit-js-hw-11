@@ -3,7 +3,7 @@ import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
 import { createGalleryCards } from './gallery-cards.js';
-import { getPhotos } from './data-methods.js';
+import { getPhotos } from './pixabay-api.js';
 
 const form = document.querySelector('.search-form');
 const galleryBox = document.querySelector('.gallery');
@@ -21,9 +21,16 @@ async function getData(userInput, page, perPage) {
   try {
     const response = await getPhotos(userInput, page, perPage);
     totalAmountOfPhoto = response.totalHits;
-    arrOfPhotos = response.hits;
+      arrOfPhotos = response.hits;
+      const lastPage = Math.ceil(totalAmountOfPhoto / perPage);
+      if (lastPage === page) {
+          Notiflix.Notify.info(
+              `We're sorry, but you've reached the end of search results.`
+          );
+          loadMoreButton.classList.add('is-hidden');
+      }
     galleryBox.insertAdjacentHTML('beforeend', createGalleryCards(arrOfPhotos));
-    var lightbox = new SimpleLightbox('.gallery a', {
+    const lightbox = new SimpleLightbox('.gallery a', {
       captions: true,
       captionPosition: 'bottom',
       captionDelay: 250,
@@ -51,10 +58,12 @@ form.addEventListener('submit', async event => {
     Notiflix.Notify.failure(
       'Sorry, there are no images matching your search query. Please try again.'
     );
+      loadMoreButton.classList.add('is-hidden');
     return;
   }
   if (arrOfPhotos.length < perPage) {
-    Notiflix.Notify.success(`Hooray! We found ${totalAmountOfPhoto} images.`);
+      Notiflix.Notify.success(`Hooray! We found ${totalAmountOfPhoto} images.`);
+      loadMoreButton.classList.add('is-hidden');
   } else {
     Notiflix.Notify.success(`Hooray! We found ${totalAmountOfPhoto} images.`);
     loadMoreButton.classList.remove('is-hidden');
@@ -62,13 +71,7 @@ form.addEventListener('submit', async event => {
 });
 
 loadMoreButton.addEventListener('click', async () => {
-  page += 1;
-  await getData(userInput, page, perPage);
-
-  if (arrOfPhotos.length < perPage) {
-    Notiflix.Notify.info(
-      `We're sorry, but you've reached the end of search results.`
-    );
-    loadMoreButton.classList.add('is-hidden');
-  }
+    page += 1;
+    await getData(userInput, page, perPage);
 });
+
